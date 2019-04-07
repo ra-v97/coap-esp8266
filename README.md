@@ -42,7 +42,7 @@ Protocol description is available under <a href="https://datatracker.ietf.org/do
 
 ## Sources and ideas
 Some ideas and implementation parts comes from:
-<a href="https://github.com/nodemcu/nodemcu-firmware/tree/master/app/coap"> NodeMCU core </a>
-<a href="https://github.com/automote/ESP-CoAP">automote/ESP-CoAP library</a>
+* <a href="https://github.com/nodemcu/nodemcu-firmware/tree/master/app/coap"> NodeMCU core </a>
+* <a href="https://github.com/automote/ESP-CoAP">automote/ESP-CoAP library</a>
 
 The library extends, supplements and adjusts automote/ESP-CoAP library.
