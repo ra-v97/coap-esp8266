@@ -31,7 +31,7 @@ public:
 
     void communicationLoop();
 
-    bool resourceRegister(String uri, Data data, ResourceType resourceType, Callback resourceCallback);
+    bool resourceRegister(String uri, uint8_t* content, size_t bufSize, Callback resourceCallback);
 
     bool resourceUpdate(String uri, Data updatedData, ResourceType dataType);
 

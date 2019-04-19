@@ -156,8 +156,8 @@ void CoAP_Server::handleGet(CoAP_Packet *response,String uri){
     int resourceIndex = getResourceIndex(uri);
     if(resourceIndex >=0){
         resources[resourceIndex].getCallback();
-        response->payload.len = 0;
-        resources[resourceIndex].getResourceBytes(response->contentParseBuff,&response->payload.len);
+        response->payload.len = resources[resourceIndex].bufSize;
+        memcpy(response->contentParseBuff, resources[resourceIndex].data, resources[resourceIndex].bufSize);
         response->payload.p = response->contentParseBuff;
         response->header.code = COAP_CONTENT;
     }else{
@@ -218,10 +218,10 @@ int CoAP_Server::getResourceIndex(String uri){
     return -1;
 }
 
-bool CoAP_Server::resourceRegister(String uri, Data data, ResourceType resourceType, Callback resourceCallback){
+bool CoAP_Server::resourceRegister(String uri, uint8_t* content, size_t bufSize, Callback resourceCallback){
     for(int i =0 ; i < MAX_RESOURCES ;i++){
        if(!resources[i].isActive()){
-           resources[i].initialize(uri,data, resourceType,resourceCallback,resourceCallback,resourceCallback,resourceCallback);
+           resources[i].initialize(uri,content, bufSize,resourceCallback,resourceCallback,resourceCallback,resourceCallback);
            return true;
        }
     }

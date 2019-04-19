@@ -33,14 +33,17 @@ class CoAP_Resource {
 public:
     String uri;
 
-    CoAP_Resource();
-    void initialize(String uri,Data data, ResourceType resourceType);
-    void initialize(String uri,Data data, ResourceType resourceType, Callback getCallback );
-    void initialize(String uri,Data data, ResourceType resourceType, Callback getCallback, Callback postCallback);
-    void initialize(String uri,Data data, ResourceType resourceType, Callback getCallback, Callback postCallback, Callback putCallback);
-    void initialize(String uri,Data data, ResourceType resourceType, Callback getCallback, Callback postCallback, Callback putCallback, Callback deleteCallback);
+    uint8_t data[MAX_PAYLOAD_SIZE];
+    size_t bufSize;
 
-    int updateResource(Data updatedData, ResourceType dataType);
+    CoAP_Resource();
+    void initialize(String uri,uint8_t* content, size_t bufSize);
+    void initialize(String uri,uint8_t* content, size_t bufSize, Callback getCallback );
+    void initialize(String uri,uint8_t* content, size_t bufSize, Callback getCallback, Callback postCallback);
+    void initialize(String uri,uint8_t* content, size_t bufSize, Callback getCallback, Callback postCallback, Callback putCallback);
+    void initialize(String uri,uint8_t* content, size_t bufSize, Callback getCallback, Callback postCallback, Callback putCallback, Callback deleteCallback);
+
+    int updateResource(uint8_t* content, size_t bufSize);
 
     int addObserver(uint8_t observerToken, uint8_t observerTokenLength, IPAddress observerIP, uint16_t observerPort);
     int removeObserver(IPAddress observerIP, uint16_t observerPort);
@@ -55,12 +58,9 @@ public:
     Callback deleteCallback;
 
     void defaultCallback();
-    void getResourceBytes(uint8_t *buf, size_t *buflen);
+    //void getResourceBytes(uint8_t *buf, size_t *buflen);
 
 private:
-    Data resourceData;
-    ResourceType type;
-    size_t resourceSize;
 
     uint8_t ackFlag;
 

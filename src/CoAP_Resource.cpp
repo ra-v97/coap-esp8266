@@ -8,26 +8,26 @@ CoAP_Resource::CoAP_Resource(){
     active = false;
 }
 
-void CoAP_Resource::initialize(String uri,Data data, ResourceType resourceType){
-    initialize(uri, data, resourceType, (Callback)&CoAP_Resource::defaultCallback, (Callback)&CoAP_Resource::defaultCallback, (Callback)&CoAP_Resource::defaultCallback, (Callback)&CoAP_Resource::defaultCallback);
+void CoAP_Resource::initialize(String uri,uint8_t* content, size_t bufSize){
+    initialize(uri, content, bufSize, (Callback)&CoAP_Resource::defaultCallback, (Callback)&CoAP_Resource::defaultCallback, (Callback)&CoAP_Resource::defaultCallback, (Callback)&CoAP_Resource::defaultCallback);
 }
 
-void CoAP_Resource::initialize(String uri,Data data, ResourceType resourceType, Callback getCallback ){
-    initialize(uri, data, resourceType, getCallback, (Callback)&CoAP_Resource::defaultCallback, (Callback)&CoAP_Resource::defaultCallback, (Callback)&CoAP_Resource::defaultCallback);
+void CoAP_Resource::initialize(String uri,uint8_t* content, size_t bufSize, Callback getCallback ){
+    initialize(uri, content, bufSize, getCallback, (Callback)&CoAP_Resource::defaultCallback, (Callback)&CoAP_Resource::defaultCallback, (Callback)&CoAP_Resource::defaultCallback);
 }
 
-void CoAP_Resource::initialize(String uri,Data data, ResourceType resourceType, Callback getCallback, Callback postCallback){
-    initialize(uri, data, resourceType, getCallback, postCallback, (Callback)&CoAP_Resource::defaultCallback, (Callback)&CoAP_Resource::defaultCallback);
+void CoAP_Resource::initialize(String uri,uint8_t* content, size_t bufSize, Callback getCallback, Callback postCallback){
+    initialize(uri, content, bufSize, getCallback, postCallback, (Callback)&CoAP_Resource::defaultCallback, (Callback)&CoAP_Resource::defaultCallback);
 }
 
-void CoAP_Resource::initialize(String uri,Data data, ResourceType resourceType, Callback getCallback, Callback postCallback, Callback putCallback){
-    initialize(uri, data, resourceType, getCallback, postCallback, putCallback, (Callback)&CoAP_Resource::defaultCallback);
+void CoAP_Resource::initialize(String uri,uint8_t* content, size_t bufSize, Callback getCallback, Callback postCallback, Callback putCallback){
+    initialize(uri, content, bufSize, getCallback, postCallback, putCallback, (Callback)&CoAP_Resource::defaultCallback);
 }
 
-void CoAP_Resource::initialize(String uri, Data data, ResourceType resourceType, Callback getCallback, Callback postCallback, Callback putCallback, Callback deleteCallback){
+void CoAP_Resource::initialize(String uri, uint8_t* content, size_t bufSize, Callback getCallback, Callback postCallback, Callback putCallback, Callback deleteCallback){
     this->uri =uri;
-    this->resourceData = data;
-    this->type = resourceType;
+    memcpy(this->data,content, bufSize);
+    this->bufSize = bufSize;
     this->getCallback = getCallback;
     this->putCallback = putCallback;
     this->postCallback = postCallback;
@@ -36,17 +36,6 @@ void CoAP_Resource::initialize(String uri, Data data, ResourceType resourceType,
     this->modified = false;
     this->ackFlag = COAP_NONCON;
     this->observersCount = 0;
-    switch(resourceType){
-        case EMPTY:
-            this->resourceSize=0;
-            break;
-        case INT:
-            this->resourceSize=4;
-            break;
-        case FLOAT:
-            this->resourceSize=4;
-            break;
-    }
 }
 
 bool CoAP_Resource::isModified(){
@@ -92,7 +81,9 @@ void CoAP_Resource::notifyObservers(){
             response.header.code = COAP_CONTENT;
             response.header.id = notificationMessageId;
 
-            getResourceBytes((uint8_t*)response.payload.p,&response.payload.len);
+            response.payload.len = bufSize;
+            memcpy(response.contentParseBuff, data, bufSize);
+            response.payload.p = response.contentParseBuff;
 
             response.optionsNumber = 0;
             response.options[response.optionsNumber].buf.p =&observers[i].state;
@@ -114,22 +105,22 @@ void CoAP_Resource::notifyObservers(){
     }
 }
 
-void CoAP_Resource::getResourceBytes(uint8_t *buf, size_t *buflen){
-    switch(type){
-        case EMPTY:
-            buf = NULL;
-            *buflen = resourceSize;
-            break;
-        case INT:
-            memcpy(buf, resourceData.byte,resourceSize);
-            *buflen = resourceSize;
-            break;
-        case FLOAT:
-            memcpy(buf, resourceData.byte,resourceSize);
-            *buflen = resourceSize;
-            break;
-    }
-}
+//void CoAP_Resource::getResourceBytes(uint8_t *buf, size_t *buflen){
+//    switch(type){
+//        case EMPTY:
+//            buf = NULL;
+//            *buflen = resourceSize;
+//            break;
+//        case INT:
+//            memcpy(buf, resourceData.byte,resourceSize);
+//            *buflen = resourceSize;
+//            break;
+//        case FLOAT:
+//            memcpy(buf, resourceData.byte,resourceSize);
+//            *buflen = resourceSize;
+//            break;
+//    }
+//}
 
 void CoAP_Resource::defaultCallback(){
     Serial.println("Default callback call");
