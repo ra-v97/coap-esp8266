@@ -25,6 +25,7 @@ void CoAP_Resource::initialize(String uri,uint8_t* content, size_t bufSize, Call
 }
 
 void CoAP_Resource::initialize(String uri, uint8_t* content, size_t bufSize, Callback getCallback, Callback postCallback, Callback putCallback, Callback deleteCallback){
+    this->state = 0;
     this->uri =uri;
     memcpy(this->data,content, bufSize);
     this->bufSize = bufSize;
@@ -46,10 +47,10 @@ bool CoAP_Resource::isActive(){
     return active;
 }
 
-int CoAP_Resource::addObserver(uint8_t observerToken, uint8_t observerTokenLength, IPAddress observerIP, uint16_t observerPort){
+int CoAP_Resource::addObserver(uint8_t* observerToken, uint8_t observerTokenLength, IPAddress observerIP, uint16_t observerPort){
     for(int index = 0; index<MAX_OBSERVERS; index++) {
-        if (!observers[index].active || (observers[index].observerIP == observerIP && observers[index].observerPort == observerPort)) {
-            observers[index].observerToken = observerToken;
+        if ((observers[index].observerIP == observerIP && observers[index].observerPort == observerPort) || !observers[index].active) {
+            memcpy(observers[index].observerToken,observerToken, observerTokenLength);
             observers[index].observerTokenLength = observerTokenLength;
             observers[index].observerIP = observerIP;
             observers[index].observerPort = observerPort;
@@ -69,6 +70,10 @@ int CoAP_Resource::removeObserver(IPAddress observerIP, uint16_t observerPort){
         }
     }
     return 0;
+}
+
+uint16_t CoAP_Resource::getNotificationMessageId(){
+    return notificationMessageId++;
 }
 
 void CoAP_Resource::notifyObservers(){
@@ -104,23 +109,6 @@ void CoAP_Resource::notifyObservers(){
         }
     }
 }
-
-//void CoAP_Resource::getResourceBytes(uint8_t *buf, size_t *buflen){
-//    switch(type){
-//        case EMPTY:
-//            buf = NULL;
-//            *buflen = resourceSize;
-//            break;
-//        case INT:
-//            memcpy(buf, resourceData.byte,resourceSize);
-//            *buflen = resourceSize;
-//            break;
-//        case FLOAT:
-//            memcpy(buf, resourceData.byte,resourceSize);
-//            *buflen = resourceSize;
-//            break;
-//    }
-//}
 
 void CoAP_Resource::defaultCallback(){
     Serial.println("Default callback call");

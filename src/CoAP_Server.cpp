@@ -51,7 +51,7 @@ void CoAP_Server::communicationLoop() {
                     response.optionsNumber = 0;
                     response.payload.len  = 0;
                     response.payload.p = NULL;
-                    sendPacket(response,Udp.remoteIP(),Udp.remotePort());
+                    sendPacket(&response,Udp.remoteIP(),Udp.remotePort());
                 } else if (packet.header.type == COAP_RESET) {
                     for(int i =0 ; i< MAX_RESOURCES ; i++){
                         if(resources[i].isActive()){
@@ -76,35 +76,39 @@ void CoAP_Server::communicationLoop() {
                     resourceDiscovery(&response);
                 } else{
                     handleGet(&response,uri);
+                    for(int i = 0 ; i < packet.optionsNumber; i++){
+                        if(packet.options[i].num == COAP_OBSERVE){
+                            int index = getResourceIndex(uri);
+                            if(index < 0)
+                                break;
+                            resources[index].addObserver((uint8_t*)packet.token.p, packet.token.len, Udp.remoteIP(),Udp.remotePort());
+                        }
+                    }
                 }
-                sendPacket(response,Udp.remoteIP(), Udp.remotePort());
+                sendPacket(&response,Udp.remoteIP(), Udp.remotePort());
                 break;
             case COAP_PUT:
                 if (packet.header.type == COAP_NONCON) {
-                    handlePut(&response);
+                    response.header.type = COAP_NONCON;
                 } else if (packet.header.type == COAP_CON) {
-                    handlePut(&response);
-                } else {
-                    Serial.println("COAP_PUT handle error");
+                    response.header.type = COAP_CON;
                 }
+                handlePut(uri, &packet, &response);
+                sendPacket(&response,Udp.remoteIP(), Udp.remotePort());
                 break;
             case COAP_POST:
                 if (packet.header.type == COAP_NONCON) {
-                    handlePost(&response);
+                    response.header.type = COAP_NONCON;
                 } else if (packet.header.type == COAP_CON) {
-                    handlePost(&response);
-                } else {
-                    Serial.println("COAP_POST handle error");
+                    response.header.type = COAP_CON;
                 }
+                handlePost(uri, &packet, &response);
+                sendPacket(&response,Udp.remoteIP(), Udp.remotePort());
                 break;
             case COAP_DELETE:
-                if (packet.header.type == COAP_NONCON) {
-                    handleDelete(&response);
-                } else if (packet.header.type == COAP_CON) {
-                    handleDelete(&response);
-                } else {
-                    Serial.println("COAP_DELETE handle error");
-                }
+                response.header.type = COAP_NONCON;
+                handleDelete(uri, &response);
+                sendPacket(&response,Udp.remoteIP(), Udp.remotePort());
                 break;
             default:
                 Serial.println("Unknown message code.");
@@ -116,6 +120,12 @@ void CoAP_Server::communicationLoop() {
 void CoAP_Server::resourceDiscovery(CoAP_Packet *response){
 
     String strRes;
+    strRes +="</";
+    strRes +="register";
+    strRes +=">;";
+    strRes +="register";
+    strRes += ",";
+
     for(int i=0;i<MAX_RESOURCES;i++){
         if(resources[i].isActive()){
             strRes +="</";
@@ -176,34 +186,146 @@ void CoAP_Server::handleGet(CoAP_Packet *response,String uri){
     response->optionsNumber++;
 }
 
-void CoAP_Server::handlePut(CoAP_Packet *response){
+void CoAP_Server::handlePut(String uri, CoAP_Packet *request, CoAP_Packet *response) {
+    int resourceIndex = getResourceIndex(uri);
+    if (resourceIndex >= 0) {
+        resources[resourceIndex].putCallback();
+        response->payload.p = NULL;
+        response->payload.len = 0;
+        response->header.code = COAP_METHOD_NOT_ALLOWED;
+    } else {
+        resourceRegister(uri,(uint8_t*)request->payload.p, request->payload.len, (Callback)&CoAP_Resource::defaultCallback);
 
+        response->payload.len = request->payload.len;
+        memcpy(response->contentParseBuff, request->payload.p, request->payload.len);
+        response->payload.p = response->contentParseBuff;
+        response->header.code = COAP_CREATED;
+
+        response->optionsNumber=0;
+        char optionBuffer[2];
+        optionBuffer[0] = ((uint16_t) COAP_TEXT_PLAIN & 0xFF00) >> 8;
+        optionBuffer[1] = ((uint16_t) COAP_TEXT_PLAIN & 0x00FF);
+        response->options[response->optionsNumber].buf.p = (uint8_t *) optionBuffer;
+        response->options[response->optionsNumber].buf.len = 2;
+        response->options[response->optionsNumber].num = COAP_CONTENT_FORMAT;
+        response->optionsNumber++;
+    }
 }
 
-void CoAP_Server::handlePost(CoAP_Packet *response){
+void CoAP_Server::handlePost(String uri, CoAP_Packet *request, CoAP_Packet *response){
+    int resourceIndex = getResourceIndex(uri);
+    if (resourceIndex >= 0) {
+        updateResource(uri, (uint8_t*)request->payload.p,request->payload.len);
+    } else {
+        resourceRegister(uri, (uint8_t *) request->payload.p, request->payload.len,
+                         (Callback) &CoAP_Resource::defaultCallback);
+    }
+        resources[resourceIndex].postCallback();
 
+        response->payload.len = request->payload.len;
+        memcpy(response->contentParseBuff, request->payload.p, request->payload.len);
+        response->payload.p = response->contentParseBuff;
+        response->header.code = COAP_CHANGED;
+
+        response->optionsNumber=0;
+        char optionBuffer[2];
+        optionBuffer[0] = ((uint16_t) COAP_TEXT_PLAIN & 0xFF00) >> 8;
+        optionBuffer[1] = ((uint16_t) COAP_TEXT_PLAIN & 0x00FF);
+        response->options[response->optionsNumber].buf.p = (uint8_t *) optionBuffer;
+        response->options[response->optionsNumber].buf.len = 2;
+        response->options[response->optionsNumber].num = COAP_CONTENT_FORMAT;
+        response->optionsNumber++;
 }
 
-void CoAP_Server::handleDelete(CoAP_Packet *response){
+void CoAP_Server::handleDelete(String uri, CoAP_Packet *response){
+    int resourceIndex = getResourceIndex(uri);
+    if(resourceIndex >=0){
+        resources[resourceIndex].deleteCallback();
+        resources[resourceIndex].active = false;
+        response->payload.p=NULL;
+        response->payload.len=0;
+        response->header.code = COAP_DELETED;
+    }else{
+        response->payload.p=NULL;
+        response->payload.len=0;
+        response->header.code=COAP_NOT_FOUND;
+    }
+    response->optionsNumber=0;
+}
 
+int CoAP_Server::updateResource(String uri, uint8_t* content, size_t bufSize){
+    int index = getResourceIndex(uri);
+    if(index < 0)
+        return 1;
+
+    if(resources[index].isActive()){
+        memcpy(resources[index].data, content, bufSize);
+        resources[index].bufSize = bufSize;
+        resources[index].modified = true;
+        return 0;
+    }
+    return 1;
 }
 
 void  CoAP_Server::notificationLoop() {
     unsigned long timestamp = millis();
     if(timestamp - previousMillisTimestamp >= NOTIFICATION_INTERVAL ){
         previousMillisTimestamp = timestamp;
+
+        CoAP_Packet response;
+        response.header.ver = COAP_VERSION;
+        response.header.code = COAP_CONTENT;
+
         for(int o = 0; o < MAX_RESOURCES ; o++){
             if(resources[o].isActive() && resources[o].isModified()){
-                resources[o].notifyObservers();
+                resources[o].modified = false;
+                resources[o].state++;
+
+                response.header.type = resources[o].ackFlag;
+                response.header.id = resources[o].getNotificationMessageId();
+
+                response.payload.len = resources[o].bufSize;
+                memcpy(response.contentParseBuff, resources[o].data, resources[o].bufSize);
+                response.payload.p = response.contentParseBuff;
+
+                response.optionsNumber = 0;
+                uint8_t buq[1];
+                buq[0]=resources[o].state;
+                response.options[response.optionsNumber].buf.len = 1;
+                response.options[response.optionsNumber].buf.p = buq;
+                response.options[response.optionsNumber].num = COAP_OBSERVE;
+                response.optionsNumber++;
+
+                response.options[response.optionsNumber].buf.p = (const uint8_t*)resources[o].uri.c_str();
+                response.options[response.optionsNumber].buf.len = resources[o].uri.length();
+                response.options[response.optionsNumber].num = COAP_URI_PATH;
+                response.optionsNumber++;
+
+                char optionBuffer2[2];
+                optionBuffer2[0] = ((uint16_t)COAP_TEXT_PLAIN & 0xFF00) >> 8;
+                optionBuffer2[1] = ((uint16_t)COAP_TEXT_PLAIN & 0x00FF) ;
+                response.options[response.optionsNumber].buf.p = (uint8_t *)optionBuffer2;
+                response.options[response.optionsNumber].buf.len = 2;
+                response.options[response.optionsNumber].num = COAP_CONTENT_FORMAT;
+                response.optionsNumber++;
+
+                for(int i = 0; i < MAX_OBSERVERS; i++){
+                   if(resources[o].observers[i].active){
+                       response.header.tkl = resources[o].observers[i].observerTokenLength;
+                       response.token.p = resources[o].observers[i].observerToken;
+                       response.token.len = resources[o].observers[i].observerTokenLength;
+                       sendPacket(&response, resources[o].observers[i].observerIP, resources[o].observers[i].observerPort);
+                   }
+                }
             }
         }
     }
 }
 
-void CoAP_Server::sendPacket(CoAP_Packet packet, IPAddress ip, int port){
+void CoAP_Server::sendPacket(CoAP_Packet* packet, IPAddress ip, int port){
     uint8_t outputBuffer[MAX_UDP_BUFFER_SIZE];
     size_t outputMessageSize;
-    packet.serialize(outputBuffer,&outputMessageSize);
+    (*packet).serialize(outputBuffer,&outputMessageSize);
     Udp.beginPacket(ip,port);
     Udp.write(outputBuffer, outputMessageSize);
     Udp.endPacket();

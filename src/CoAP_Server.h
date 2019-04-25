@@ -18,7 +18,7 @@
 
 //CoAP server configuration
 #define MAX_RESOURCES 20
-#define NOTIFICATION_INTERVAL 1000
+#define NOTIFICATION_INTERVAL 5000
 #define MAX_UDP_BUFFER_SIZE 512
 
 class CoAP_Server {
@@ -35,7 +35,7 @@ public:
 
     bool resourceUpdate(String uri, Data updatedData, ResourceType dataType);
 
-    CoAP_Resource getResource(String uri);
+    int updateResource(String uri,uint8_t* content, size_t bufSize);
 
 private:
     CoAP_Resource resources[MAX_RESOURCES];
@@ -44,17 +44,17 @@ private:
 
     unsigned long previousMillisTimestamp;
 
-    void sendPacket(CoAP_Packet packet, IPAddress ip, int port);
+    void sendPacket(CoAP_Packet* packet, IPAddress ip, int port);
 
     void resourceDiscovery(CoAP_Packet *response);
 
     void handleGet(CoAP_Packet *response, String uri);
 
-    void handlePut(CoAP_Packet *response);
+    void handlePut(String uri, CoAP_Packet *request, CoAP_Packet *response);
 
-    void handlePost(CoAP_Packet *response);
+    void handlePost(String uri, CoAP_Packet *request, CoAP_Packet *response);
 
-    void handleDelete(CoAP_Packet *response);
+    void handleDelete(String uri, CoAP_Packet *response);
 
     void notificationLoop();
 

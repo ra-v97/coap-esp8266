@@ -8,16 +8,16 @@
 #include <ESP8266WiFi.h>
 #include <stdint.h>
 
+#define MAX_TOKEN_SIZE 10
 class CoAP_Observer {
 public:
     CoAP_Observer();
-    CoAP_Observer(uint8_t observerToken, uint8_t observerTokenLength, IPAddress observerIP, uint16_t observerPort);
 
-    uint8_t observerToken;
+    uint8_t observerToken[MAX_TOKEN_SIZE];
     uint8_t observerTokenLength;
     IPAddress observerIP;
     uint16_t observerPort;
-    uint8_t state = 0;
+    uint8_t state;
     bool active;
 };
 
