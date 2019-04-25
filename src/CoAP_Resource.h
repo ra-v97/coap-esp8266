@@ -49,12 +49,11 @@ public:
     void initialize(String uri,uint8_t* content, size_t bufSize, Callback getCallback, Callback postCallback, Callback putCallback);
     void initialize(String uri,uint8_t* content, size_t bufSize, Callback getCallback, Callback postCallback, Callback putCallback, Callback deleteCallback);
 
-    int addObserver(uint8_t* observerToken, uint8_t observerTokenLength, IPAddress observerIP, uint16_t observerPort);
+    int addObserver(IPAddress observerIP, uint16_t observerPort, uint8_t* observerToken, size_t observerTokenLength);
     int removeObserver(IPAddress observerIP, uint16_t observerPort);
 
     bool isModified();
     bool isActive();
-    void notifyObservers();
 
     Callback getCallback;
     Callback putCallback;

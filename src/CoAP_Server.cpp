@@ -79,9 +79,11 @@ void CoAP_Server::communicationLoop() {
                     for(int i = 0 ; i < packet.optionsNumber; i++){
                         if(packet.options[i].num == COAP_OBSERVE){
                             int index = getResourceIndex(uri);
-                            if(index < 0)
-                                break;
-                            resources[index].addObserver((uint8_t*)packet.token.p, packet.token.len, Udp.remoteIP(),Udp.remotePort());
+                            if(index >= 0){
+                                Serial.println("Adding observer");
+                                resources[index].addObserver(Udp.remoteIP(), Udp.remotePort(), (uint8_t*)packet.token.p, packet.token.len);
+                            }
+                            break;
                         }
                     }
                 }
@@ -289,10 +291,6 @@ void  CoAP_Server::notificationLoop() {
                 response.payload.p = response.contentParseBuff;
 
                 response.optionsNumber = 0;
-                uint8_t buq[1];
-                buq[0]=resources[o].state;
-                response.options[response.optionsNumber].buf.len = 1;
-                response.options[response.optionsNumber].buf.p = buq;
                 response.options[response.optionsNumber].num = COAP_OBSERVE;
                 response.optionsNumber++;
 
@@ -309,13 +307,25 @@ void  CoAP_Server::notificationLoop() {
                 response.options[response.optionsNumber].num = COAP_CONTENT_FORMAT;
                 response.optionsNumber++;
 
+                IPAddress observerIP;
+                uint16_t observerPort;
+                uint16_t observerState;
+                uint8_t token[MAX_TOKEN_SIZE];
+                uint8_t tokenLength;
+                uint8_t stateOptBuff[OBSERVER_STATE_SIZE];
+
+                response.options[0].buf.p  = stateOptBuff;
+                response.options[0].buf.len  = OBSERVER_STATE_SIZE;
+
                 for(int i = 0; i < MAX_OBSERVERS; i++){
-                   if(resources[o].observers[i].active){
-                       response.header.tkl = resources[o].observers[i].observerTokenLength;
-                       response.token.p = resources[o].observers[i].observerToken;
-                       response.token.len = resources[o].observers[i].observerTokenLength;
-                       sendPacket(&response, resources[o].observers[i].observerIP, resources[o].observers[i].observerPort);
-                   }
+                    if(resources[o].observers[i].getObserverInfo(&observerIP, &observerPort, token, &tokenLength, &observerState) == 0){
+                        response.header.tkl = tokenLength;
+                        response.token.p = token;
+                        response.token.len = tokenLength;
+                        stateOptBuff[0] = (uint8_t)(observerState >> 8);
+                        stateOptBuff[1] = (uint8_t)observerState;
+                        sendPacket(&response, observerIP, observerPort);
+                    }
                 }
             }
         }
@@ -337,7 +347,7 @@ int CoAP_Server::getResourceIndex(String uri){
          return i;
      }
     }
-    return -1;
+    return 1;
 }
 
 bool CoAP_Server::resourceRegister(String uri, uint8_t* content, size_t bufSize, Callback resourceCallback){

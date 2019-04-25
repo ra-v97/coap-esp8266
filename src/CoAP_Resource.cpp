@@ -47,14 +47,9 @@ bool CoAP_Resource::isActive(){
     return active;
 }
 
-int CoAP_Resource::addObserver(uint8_t* observerToken, uint8_t observerTokenLength, IPAddress observerIP, uint16_t observerPort){
-    for(int index = 0; index<MAX_OBSERVERS; index++) {
-        if ((observers[index].observerIP == observerIP && observers[index].observerPort == observerPort) || !observers[index].active) {
-            memcpy(observers[index].observerToken,observerToken, observerTokenLength);
-            observers[index].observerTokenLength = observerTokenLength;
-            observers[index].observerIP = observerIP;
-            observers[index].observerPort = observerPort;
-            observers[index].active = true;
+int CoAP_Resource::addObserver(IPAddress observerIP, uint16_t observerPort, uint8_t* observerToken, size_t observerTokenLength){
+    for(int i = 0 ; i < MAX_OBSERVERS ; i++) {
+        if(observers[i].activate(observerIP, observerPort, observerToken, observerTokenLength) == 0){
             observersCount++;
             return 0;
         }
@@ -63,9 +58,9 @@ int CoAP_Resource::addObserver(uint8_t* observerToken, uint8_t observerTokenLeng
 }
 
 int CoAP_Resource::removeObserver(IPAddress observerIP, uint16_t observerPort){
-    for(int i = 0 ; i< MAX_OBSERVERS ; i++){
-        if(observers[i].observerIP == observerIP && observers[i].observerPort == observerPort){
-            observers[i].active = false;
+    for(int i = 0 ; i < MAX_OBSERVERS ; i++){
+        if(observers[i].compare(observerIP, observerPort)){
+            observers[i].deactivate();
             observersCount--;
         }
     }
@@ -76,41 +71,5 @@ uint16_t CoAP_Resource::getNotificationMessageId(){
     return notificationMessageId++;
 }
 
-void CoAP_Resource::notifyObservers(){
-    modified = false;
-    for(int i = 0; i < observersCount; i++){
-        if(observers[i].active){
-            CoAP_Packet response;
-            response.header.ver = COAP_VERSION;
-            response.header.type = ackFlag;
-            response.header.code = COAP_CONTENT;
-            response.header.id = notificationMessageId;
-
-            response.payload.len = bufSize;
-            memcpy(response.contentParseBuff, data, bufSize);
-            response.payload.p = response.contentParseBuff;
-
-            response.optionsNumber = 0;
-            response.options[response.optionsNumber].buf.p =&observers[i].state;
-            observers[i].state++;
-            response.options[response.optionsNumber].buf.len = 1;
-            response.options[response.optionsNumber].num = COAP_OBSERVE;
-            response.optionsNumber++;
-
-            char optionBuffer2[2];
-            optionBuffer2[0] = ((uint16_t)COAP_TEXT_PLAIN & 0xFF00) >> 8;
-            optionBuffer2[1] = ((uint16_t)COAP_TEXT_PLAIN & 0x00FF) ;
-            response.options[response.optionsNumber].buf.p = (uint8_t *)optionBuffer2;
-            response.options[response.optionsNumber].buf.len = 2;
-            response.options[response.optionsNumber].num = COAP_CONTENT_FORMAT;
-            response.optionsNumber++;
-
-            notificationMessageId = (notificationMessageId+1)%5000;
-        }
-    }
-}
-
-void CoAP_Resource::defaultCallback(){
-    Serial.println("Default callback call");
-}
+void CoAP_Resource::defaultCallback(){}
 
