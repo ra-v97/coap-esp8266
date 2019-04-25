@@ -9,7 +9,6 @@ CoAP_Observer::CoAP_Observer() {
 }
 
 int CoAP_Observer::activate(IPAddress observerIP, uint16_t observerPort, uint8_t *observerToken, uint8_t observerTokenLength) {
-    Serial.println("Start activation");
     if(canBeActivated(observerIP, observerPort)){
         ip = observerIP;
         port = observerPort;
@@ -22,7 +21,7 @@ int CoAP_Observer::activate(IPAddress observerIP, uint16_t observerPort, uint8_t
         tokenLength = observerTokenLength;
         state = 1;
         active = true;
-        Serial.println("activation success");
+
         return 0;
     }
     return 1;

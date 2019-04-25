@@ -80,7 +80,6 @@ void CoAP_Server::communicationLoop() {
                         if(packet.options[i].num == COAP_OBSERVE){
                             int index = getResourceIndex(uri);
                             if(index >= 0){
-                                Serial.println("Adding observer");
                                 resources[index].addObserver(Udp.remoteIP(), Udp.remotePort(), (uint8_t*)packet.token.p, packet.token.len);
                             }
                             break;
