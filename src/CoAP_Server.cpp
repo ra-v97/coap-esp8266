@@ -132,14 +132,14 @@ void CoAP_Server::handleResourceDiscovery(CoAP_Packet *response) {
             strRes += ",";
         }
     }
-    setMessageContent(response, (uint8_t *) strRes.c_str(), strRes.length());
+    setMessageContent(response, (uint8_t *) strRes.c_str(), strRes.length(), COAP_APPLICATION_LINK_FORMAT);
 }
 
 void CoAP_Server::handleGet(String uri, CoAP_Packet *response) {
     int resourceIndex = getResourceIndex(uri);
     if (resourceIndex >= 0) {
         resources[resourceIndex].getCallback();
-        setMessageContent(response, resources[resourceIndex].data, resources[resourceIndex].dataSize);
+        setMessageContent(response, resources[resourceIndex].data, resources[resourceIndex].dataSize, COAP_TEXT_PLAIN);
     } else {
         response->payload.p = NULL;
         response->payload.len = 0;
@@ -157,7 +157,7 @@ void CoAP_Server::handlePut(String uri, CoAP_Packet *request, CoAP_Packet *respo
     } else {
         resourceRegister(uri, (uint8_t *) request->payload.p, request->payload.len);
 
-        setMessageContent(response, request->payload.p, request->payload.len);
+        setMessageContent(response, request->payload.p, request->payload.len, COAP_TEXT_PLAIN);
         response->header.code = COAP_CREATED;
     }
 }
@@ -171,7 +171,7 @@ void CoAP_Server::handlePost(String uri, CoAP_Packet *request, CoAP_Packet *resp
     }
     resources[resourceIndex].postCallback();
 
-    setMessageContent(response, (uint8_t *) request->payload.p, request->payload.len);
+    setMessageContent(response, (uint8_t *) request->payload.p, request->payload.len, COAP_TEXT_PLAIN);
     response->header.code = COAP_CHANGED;
 }
 
@@ -289,7 +289,7 @@ void CoAP_Server::notificationLoop() {
                 response.options[response.optionsNumber].num = COAP_URI_PATH;
                 response.optionsNumber++;
 
-                setMessageContent(&response, resources[o].data, resources[o].dataSize);
+                setMessageContent(&response, resources[o].data, resources[o].dataSize, COAP_TEXT_PLAIN);
 
                 IPAddress observerIP;
                 uint16_t observerPort;
@@ -370,7 +370,7 @@ void CoAP_Server::responseTypeHandle(CoAP_Packet *request, CoAP_Packet *response
     response->header.type = request->header.type;
 }
 
-int CoAP_Server::setMessageContent(CoAP_Packet *response, uint8_t *content, size_t contentLength) {
+int CoAP_Server::setMessageContent(CoAP_Packet *response, uint8_t *content, size_t contentLength, COAP_CONTENT_TYPE type) {
     if (contentLength > COAP_MAX_PAYLOAD_SIZE) {
         return 1;
     }
@@ -384,8 +384,8 @@ int CoAP_Server::setMessageContent(CoAP_Packet *response, uint8_t *content, size
 
     response->options[response->optionsNumber].buf.p = &responseUdpBuffer[busyResponseMemorySize];
     busyResponseMemorySize += 2;
-    response->options[response->optionsNumber].buf.p[0] = ((uint16_t) COAP_TEXT_PLAIN & 0xFF00) >> 8;
-    response->options[response->optionsNumber].buf.p[1] = ((uint16_t) COAP_TEXT_PLAIN & 0x00FF);
+    response->options[response->optionsNumber].buf.p[0] = ((uint16_t) type & 0xFF00) >> 8;
+    response->options[response->optionsNumber].buf.p[1] = ((uint16_t) type & 0x00FF);
     response->options[response->optionsNumber].buf.len = 2;
     response->options[response->optionsNumber].num = COAP_CONTENT_FORMAT;
     response->optionsNumber++;

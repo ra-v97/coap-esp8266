@@ -8,15 +8,13 @@ Protocol description is available under <a href="https://datatracker.ietf.org/do
 * **/examples** - Example sketches for the library (.ino). Run these from the Arduino IDE. 
 * **/src** - Source files for the library (.cpp, .h).
 * **library.properties** - General library properties for the Arduino package manager.
-* **keywords.txt** - Contains the keywords for Arduino IDE.
 
 ## How to use
 1. Download this library 
 2. Put it into libraries folder of Arduino IDE
 3. Create instance of COAP class
-4. Add proper callacks and resources
-5. Test server with <a href="https://github.com/mkovatsc/Copper4Cr">Copper4Cr plugin</a> or manualny send informations compatible with CoAP protocol.
-6. Test client by sending messages.
+4. Add proper callbacks and resources
+5. Test server with <a href="https://github.com/mkovatsc/Copper4Cr">Copper4Cr plugin</a> or manually send information compatible with CoAP protocol.
 
 ### Library features
 - Server Side Functionality:
@@ -25,19 +23,16 @@ Protocol description is available under <a href="https://datatracker.ietf.org/do
 	  - PUT
 	  - POST 
 	  - DELETE 
-  - Observe - add client to subscription list of resource and sends notifications to subscriers when resource has changed.
+    - Observe - add client to subscription list of resource and sends notifications to subscribers when resource has changed.
 	- Ping 
 	- Resource Discovery 
-	- Block Transfer - not implemented because controll messages are small and doesn't require this.
+	- Block Transfer - not implemented because control messages are small and doesn't require this.
 
-- Client Side Functionality:
-	- Methods - sends proper message request like REST methods
-	  - GET
-	  - PUT
-	  - POST 
-	  - DELETE 
-	- Observe - register client as observer of given resource.
-	- Ping 
+### Usage example
+-asas
+ ```
+ Give examples
+ ```
 
 ## Sources and ideas
 Some ideas and implementation parts comes from:

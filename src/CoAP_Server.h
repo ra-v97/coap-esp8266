@@ -85,7 +85,7 @@ private:
 
     void responseTypeHandle(CoAP_Packet *request, CoAP_Packet *response);
 
-    int setMessageContent(CoAP_Packet *response, uint8_t *content, size_t contentLength);
+    int setMessageContent(CoAP_Packet *response, uint8_t *content, size_t contentLength, COAP_CONTENT_TYPE type);
 };
 
 #endif //COAP_ESP8266_COAP_SERVER_H
