@@ -42,6 +42,8 @@ public:
 
     int updateResource(String uri, float value);
 
+    int getResourceValueString(String uri, char* buffer, size_t bufSize, size_t* outputSize);
+
     int getResourceValueInt(String uri);
 
     float getResourceValueFloat(String uri);

@@ -207,33 +207,44 @@ int CoAP_Server::updateResource(String uri, uint8_t *content, size_t bufSize) {
     return 1;
 }
 
-int CoAP_Server::updateResource(String uri, int value){
+int CoAP_Server::getResourceValueString(String uri, char *buffer, size_t bufSize, size_t *outputSize) {
+    int index = getResourceIndex(uri);
+    if (index >= 0 && resources[index].isActive() && bufSize > resources[index].dataSize) {
+        *outputSize = resources[index].dataSize;
+        memcpy(buffer, (char *) resources[index].data, resources[index].dataSize);
+        buffer[*outputSize] = '\0';
+        return 0;
+    }
+    return 1;
+}
+
+int CoAP_Server::updateResource(String uri, int value) {
     int index = getResourceIndex(uri);
     if (index >= 0 && resources[index].isActive()) {
         uint8_t bytes[4];
-        bytes[0] = ((uint32_t)value >> 24) & 0xFF;
-        bytes[1] = ((uint32_t)value >> 16) & 0xFF;
-        bytes[2] = ((uint32_t)value >> 8) & 0xFF;
-        bytes[3] = (uint32_t)value & 0xFF;
+        bytes[0] = ((uint32_t) value >> 24) & 0xFF;
+        bytes[1] = ((uint32_t) value >> 16) & 0xFF;
+        bytes[2] = ((uint32_t) value >> 8) & 0xFF;
+        bytes[3] = (uint32_t) value & 0xFF;
         return resources[index].updateResource(bytes, 4);
     }
     return 1;
 }
 
-int CoAP_Server::updateResource(String uri, float value){
+int CoAP_Server::updateResource(String uri, float value) {
     int index = getResourceIndex(uri);
     if (index >= 0 && resources[index].isActive()) {
         uint8_t bytes[4];
-        bytes[0] = ((uint32_t)value >> 24) & 0xFF;
-        bytes[1] = ((uint32_t)value >> 16) & 0xFF;
-        bytes[2] = ((uint32_t)value >> 8) & 0xFF;
-        bytes[3] = (uint32_t)value & 0xFF;
+        bytes[0] = ((uint32_t) value >> 24) & 0xFF;
+        bytes[1] = ((uint32_t) value >> 16) & 0xFF;
+        bytes[2] = ((uint32_t) value >> 8) & 0xFF;
+        bytes[3] = (uint32_t) value & 0xFF;
         return resources[index].updateResource(bytes, 4);
     }
     return 1;
 }
 
-int CoAP_Server::getResourceValueInt(String uri){
+int CoAP_Server::getResourceValueInt(String uri) {
     int index = getResourceIndex(uri);
     if (index >= 0 && resources[index].isActive()) {
         return resources[index].getIntValue();
@@ -241,7 +252,7 @@ int CoAP_Server::getResourceValueInt(String uri){
     return 0;
 }
 
-float CoAP_Server::CoAP_Server::getResourceValueFloat(String uri){
+float CoAP_Server::CoAP_Server::getResourceValueFloat(String uri) {
     int index = getResourceIndex(uri);
     if (index >= 0 && resources[index].isActive()) {
         return resources[index].getFloatValue();
