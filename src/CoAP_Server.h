@@ -1,7 +1,6 @@
 //
 // Created by rafstach on 07/04/2019.
 //
-
 #ifndef COAP_ESP8266_COAP_SERVER_H
 #define COAP_ESP8266_COAP_SERVER_H
 
@@ -18,7 +17,7 @@
 
 //CoAP server configuration
 #define MAX_RESOURCES 20
-#define NOTIFICATION_INTERVAL 5000
+#define NOTIFICATION_INTERVAL 500
 #define MAX_UDP_BUFFER_SIZE 512
 
 class CoAP_Server {
@@ -31,11 +30,21 @@ public:
 
     void communicationLoop();
 
-    bool resourceRegister(String uri, uint8_t* content, size_t bufSize, Callback resourceCallback);
+    bool resourceRegister(String uri, uint8_t *content, size_t bufSize, Callback resourceCallback);
 
-    bool resourceUpdate(String uri, Data updatedData, ResourceType dataType);
+    bool resourceRegister(String uri, uint8_t *content, size_t bufSize, Callback getCallback, Callback postCallback);
 
-    int updateResource(String uri,uint8_t* content, size_t bufSize);
+    bool resourceRegister(String uri, uint8_t *content, size_t bufSize);
+
+    int updateResource(String uri, uint8_t *content, size_t bufSize);
+
+    int updateResource(String uri, int value);
+
+    int updateResource(String uri, float value);
+
+    int getResourceValueInt(String uri);
+
+    float getResourceValueFloat(String uri);
 
 private:
     CoAP_Resource resources[MAX_RESOURCES];
@@ -44,11 +53,21 @@ private:
 
     unsigned long previousMillisTimestamp;
 
-    void sendPacket(CoAP_Packet* packet, IPAddress ip, int port);
+    uint8_t receiveUdpBuffer[MAX_UDP_BUFFER_SIZE];
 
-    void resourceDiscovery(CoAP_Packet *response);
+    uint8_t responseUdpBuffer[MAX_UDP_BUFFER_SIZE];
 
-    void handleGet(CoAP_Packet *response, String uri);
+    size_t busyResponseMemorySize;
+
+    char resourceUriBuf[COAP_MAX_URI_SIZE];
+
+    size_t resourceUriSize;
+
+    void sendPacket(CoAP_Packet *packet, IPAddress ip, int port);
+
+    void handleResourceDiscovery(CoAP_Packet *response);
+
+    void handleGet(String uri, CoAP_Packet *response);
 
     void handlePut(String uri, CoAP_Packet *request, CoAP_Packet *response);
 
@@ -56,9 +75,15 @@ private:
 
     void handleDelete(String uri, CoAP_Packet *response);
 
+    void handlePing(CoAP_Packet *response);
+
     void notificationLoop();
 
     int getResourceIndex(String uri);
+
+    void responseTypeHandle(CoAP_Packet *request, CoAP_Packet *response);
+
+    int setMessageContent(CoAP_Packet *response, uint8_t *content, size_t contentLength);
 };
 
 #endif //COAP_ESP8266_COAP_SERVER_H

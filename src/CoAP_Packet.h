@@ -2,21 +2,20 @@
 // Created by rafstach on 07/04/2019.
 // Structures and enum definition based on nodemcu core which link states in README.md
 //
-
 #ifndef COAP_ESP8266_COAP_PACKET_H
 #define COAP_ESP8266_COAP_PACKET_H
 
 #include <Arduino.h>
 #include <stdint.h>
-#include <sys/types.h>
 #include <string.h>
+#include <sys/types.h>
+
 //CoAP Packet configuration
-#define MAX_OPTIONS 16
-#define MAX_URI_SIZE 100
-#define MAX_PAYLOAD_SIZE 350
 #define COAP_VERSION 1
 #define COAP_HEADER_SIZE 4
-#define COAP_OPTION_HEADER_SIZE 1
+#define COAP_MAX_OPTIONS_NUMBER 7
+#define COAP_MAX_PAYLOAD_SIZE 350
+#define COAP_MAX_URI_SIZE 100
 #define COAP_PAYLOAD_MARKER 0xFF
 ///////////////////////
 
@@ -94,8 +93,8 @@ typedef enum {
     COAP_APPLICATION_JSON = 50
 } COAP_CONTENT_TYPE;
 
-typedef enum
-{
+//coap error types
+typedef enum {
     COAP_ERR_NONE = 0,
     COAP_ERR_HEADER_TOO_SHORT = 1,
     COAP_ERR_VERSION_NOT_1 = 2,
@@ -122,7 +121,7 @@ typedef struct PacketHeader {
 } PacketHeader;
 
 typedef struct PacketBuffer {
-    const uint8_t *p;
+    uint8_t *p;
     size_t len;
 } PacketBuffer;
 
@@ -133,23 +132,30 @@ typedef struct PacketOption {
 
 class CoAP_Packet {
 public:
-    PacketHeader header;                     /* Header of the packet */
-    PacketBuffer token;                      /* Token value, size as specified by hdr.tkl */
-    uint8_t optionsNumber;                   /* Number of options */
-    PacketOption options[MAX_OPTIONS];       /* Options of the packet. For possible entries see http://tools.ietf.org/html/rfc7252#section-5.10 */
+    PacketHeader header;
 
-    PacketBuffer payload;                    /* Payload carried by the packet */
+    PacketBuffer token;
 
-    int parse(const uint8_t *buf, size_t buflen);
-    int getResourceUri(char* uribuf, size_t* urilen);
-    int serialize(uint8_t *buf, size_t* buflen);
+    uint8_t optionsNumber;
 
-    uint8_t contentParseBuff[MAX_PAYLOAD_SIZE];
+    PacketOption options[COAP_MAX_OPTIONS_NUMBER];
+
+    PacketBuffer payload;
+
+    int parse(uint8_t *buf, size_t buflen);
+
+    int getResourceUri(char *uribuf, size_t *urilen);
+
+    int serialize(uint8_t *buf, size_t *buflen);
+
 private:
-    int parseHeader(const uint8_t *buf, size_t buflen);
-    int parseToken(const uint8_t *buf, size_t buflen);
-    int parseOption(PacketOption *option, uint16_t *runningDelta, const uint8_t **buf, size_t buflen);
-    int parseOptionsAndPayload(const uint8_t *buf, size_t buflen);
+    int parseHeader(uint8_t *buf, size_t buflen);
+
+    int parseToken(uint8_t *buf, size_t buflen);
+
+    int parseOption(PacketOption *option, uint16_t *runningDelta, uint8_t **buf, size_t buflen);
+
+    int parseOptionsAndPayload(uint8_t *buf, size_t buflen);
 };
 
 #endif //COAP_ESP8266_COAP_PACKET_H
