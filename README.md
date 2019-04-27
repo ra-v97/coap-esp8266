@@ -28,15 +28,111 @@ Protocol description is available under <a href="https://datatracker.ietf.org/do
 	- Resource Discovery 
 	- Block Transfer - not implemented because control messages are small and doesn't require this.
 
-### Usage example
--asas
- ```
- Give examples
- ```
+### Usage examples
+- Server initialisation
+    ```
+    /*Define global at the beginning of sketch*/
 
+    CoAP_Server server(); //use with default CoAP port: 5683
+
+    CoAP_Server server(5000); //use custom port 5000 (Udp port)
+    ```
+
+- Add resource to server (see Resources info section to get more info)
+    - Define callback function, supported are callback for **get** and **post** request. Callback has to be define in the sketch.
+    ```
+    void getCallback(){
+      Serial.println("Received get request");
+    }
+
+    void postCallback(){
+      char buf[20];
+      size_t len;
+      server.getResourceValueString("Temperature", buf, 20, &len);
+      Serial.print("Received post: ");
+      Serial.println(buf);
+    }
+    ```
+    - Register resource on server
+    ```
+    /*registration of "Message" resource with initial byte value of "Hello world!", size 12 bytes and getCallback (pointer to function)*/
+    server.resourceRegister("Message", (uint8_t*)"Hello world!", 12, getCallback);
+
+    /*registration of "Temperature" resource with empty initial value, size 0, getCallback (pointer to function) and postCallback*/
+    server.resourceRegister("Temperature", (uint8_t*)"", 0, getCallback, postCallback);
+    ```
+    - Reading resource value
+    ```
+    /*Reading value stored in "Message" resource and saving it to buf, in len size of resource is returned*/
+    size_t bufferForResultSize = 20;
+    char bufferForResult[bufferForResultSize];
+    size_t lengthOfReturnedValue;
+    server.getResourceValueString("Message", bufferForResultSize, bufferForResultSize, &lengthOfReturnedValue);
+
+    /*Reading value stored in "IntResource" resource and returning as int value, Int must be stored on first four byte in buffer*/
+    int value =  getResourceValueInt("IntResource");
+
+    /*Reading value stored in "IntResource" resource and returning as float value, float must be stored on first four byte in buffer*/
+    float value = getResourceValueFloat("FloatResource");
+    ```
+    - Updating resource on server
+    ```
+    /*Setting byte value into resource*/
+    String resourceUri = String("Resource");
+    String content = "Content";
+    int correctlyAddedFlag =  updateResource(resourceUri, (uint8_t*) content.c_str(), content.length());
+
+    /*Setting int value into fuffer*/
+    int newValueInt = 15;
+    int correctlyAddedFlag =  updateResource(resourceUri, newValueInt);
+
+    /*Setting float value into resource*/
+    float newValueFloat = 1.0;
+    int correctlyAddedFlag =  updateResource(resourceUri, newValueFloat);
+    ```
+
+    - Loop function (must be called at least evey 5s in sketch *loop()* function)
+
+   ```
+   void loop() {
+         server.communicationLoop();
+   }
+   ```
+
+## Resource info
+1. Resources are identified by *uri*. Each *uri* must by Arduino String.
+2. Client can subscribe for the resource change notification by sending get request with *observe option*.
+3. Removing from subscribers' list is performed by sending reset request to server.
+4. Resources for notification are checked every 500ms, it can be change in *CoAP_Server.h* server configuration.
+5. Available operations on server:
+    ```
+    bool resourceRegister(String uri, uint8_t *content, size_t bufSize, Callback resourceCallback);
+
+    bool resourceRegister(String uri, uint8_t *content, size_t bufSize, Callback getCallback, Callback postCallback);
+
+    bool resourceRegister(String uri, uint8_t *content, size_t bufSize);
+
+    int deleteResource(String uri);
+
+    int updateResource(String uri, uint8_t *content, size_t bufSize);
+
+    int updateResource(String uri, int value);
+
+    int updateResource(String uri, float value);
+
+    int getResourceValueString(String uri, char* buffer, size_t bufSize, size_t* outputSize);
+
+    int getResourceValueInt(String uri);
+
+    float getResourceValueFloat(String uri);
+    ```
 ## Sources and ideas
-Some ideas and implementation parts comes from:
+Some ideas comes from:
 * <a href="https://github.com/nodemcu/nodemcu-firmware/tree/master/app/coap"> NodeMCU core </a>
 * <a href="https://github.com/automote/ESP-CoAP">automote/ESP-CoAP library</a>
 
 The library extends, supplements and adjusts automote/ESP-CoAP library.
+
+## Author
+
+* **Rafal Stachura**  -  [github](https://github.com/ra-v97)

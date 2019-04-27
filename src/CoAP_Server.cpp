@@ -244,6 +244,15 @@ int CoAP_Server::updateResource(String uri, float value) {
     return 1;
 }
 
+int CoAP_Server::deleteResource(String uri){
+    int index = getResourceIndex(uri);
+    if (index >= 0) {
+        resources[index].deactivate();
+        return 0;
+    }
+    return 1;
+}
+
 int CoAP_Server::getResourceValueInt(String uri) {
     int index = getResourceIndex(uri);
     if (index >= 0 && resources[index].isActive()) {

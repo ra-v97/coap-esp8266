@@ -36,6 +36,8 @@ public:
 
     bool resourceRegister(String uri, uint8_t *content, size_t bufSize);
 
+    int deleteResource(String uri);
+
     int updateResource(String uri, uint8_t *content, size_t bufSize);
 
     int updateResource(String uri, int value);
