@@ -61,6 +61,7 @@ Protocol description is available under <a href="https://datatracker.ietf.org/do
     /*registration of "Temperature" resource with empty initial value, size 0, getCallback (pointer to function) and postCallback*/
     server.resourceRegister("Temperature", (uint8_t*)"", 0, getCallback, postCallback);
     ```
+- Handling with resources
     - Reading resource value
     ```
     /*Reading value stored in "Message" resource and saving it to buf, in len size of resource is returned*/
@@ -82,7 +83,7 @@ Protocol description is available under <a href="https://datatracker.ietf.org/do
     String content = "Content";
     int correctlyAddedFlag =  updateResource(resourceUri, (uint8_t*) content.c_str(), content.length());
 
-    /*Setting int value into fuffer*/
+    /*Setting int value into buffer*/
     int newValueInt = 15;
     int correctlyAddedFlag =  updateResource(resourceUri, newValueInt);
 
@@ -91,7 +92,7 @@ Protocol description is available under <a href="https://datatracker.ietf.org/do
     int correctlyAddedFlag =  updateResource(resourceUri, newValueFloat);
     ```
 
-    - Loop function (must be called at least evey 5s in sketch *loop()* function)
+- Loop function (must be called at least evey 5s in sketch *loop()* function)
 
    ```
    void loop() {
