@@ -1,4 +1,4 @@
-# coap-esp8266
+# CoAP-ESP8266
 Implementation of basic functionality of CoAP protocol based on ESP8266WiFi library for Arduino. Protocol not contains all of functions described in RFC 7252 and was designed for real time control of robot, but can be used for another purposes.
 
 ## CoAP communication protocol - RFC 7252
